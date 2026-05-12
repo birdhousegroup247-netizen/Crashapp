@@ -7,6 +7,27 @@ dotenv.config();
 
 const app = express();
 
+const rateLimit = require('express-rate-limit');
+
+// Rate limiters
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { error: 'Too many requests, please try again later.' }
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: 'Too many login attempts, please try again later.' }
+});
+
+const reportLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  keyGenerator: (req) => req.user?.id || req.ip,
+  message: { error: 'You have filed too many reports. Please wait before posting again.' }
+});
 // Middleware
 app.use(cors({
   origin: [
@@ -21,11 +42,16 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 const authRoutes = require('./routes/authRoutes');
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
+
 const reportRoutes = require('./routes/reportRoutes');
-app.use('/api/reports', reportRoutes);
+app.use('/api/reports', globalLimiter, reportRoutes);
+
 const upvoteRoutes = require('./routes/upvoteRoutes');
 app.use('/api/reports', upvoteRoutes);
+
+const userRoutes = require('./routes/userRoutes');
+app.use('/api/users', globalLimiter, userRoutes);
 // Test route
 app.get('/', (req, res) => {
   res.json({ message: 'CrashApp API is running!' });

@@ -62,11 +62,20 @@ const getReport = async (req, res) => {
 
 // Create a report
 const createReport = async (req, res) => {
-  const { tool_name, title, description, severity, status } = req.body;
-  const user_id = req.user.id;
-  const screenshot_url = req.file ? req.file.path : null;
+  console.log('Body:', req.body);
+  console.log('File:', req.file);
 
   try {
+    const { tool_name, title, description, severity, status } = req.body;
+    const user_id = req.user.id;
+    const screenshot_url = req.file ? req.file.path : null;
+
+    if (!tool_name || !title || !description || !severity) {
+      return res.status(400).json({
+        error: 'tool_name, title, description and severity are required'
+      });
+    }
+
     const result = await pool.query(
       `INSERT INTO reports (user_id, tool_name, title, description, severity, status, screenshot_url)
        VALUES ($1, $2, $3, $4, $5, $6, $7)

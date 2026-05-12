@@ -14,7 +14,7 @@ router.get('/', getReports);
 router.get('/search', getReports);
 router.get('/:id', getReport);
 
-// Protected routes
+// Protected routes - removed upload middleware temporarily
 router.post('/', authMiddleware, createReport);
 router.put('/:id', authMiddleware, updateReport);
 router.delete('/:id', authMiddleware, deleteReport);
