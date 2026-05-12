@@ -22,7 +22,10 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 const authRoutes = require('./routes/authRoutes');
 app.use('/api/auth', authRoutes);
-
+const reportRoutes = require('./routes/reportRoutes');
+app.use('/api/reports', reportRoutes);
+const upvoteRoutes = require('./routes/upvoteRoutes');
+app.use('/api/reports', upvoteRoutes);
 // Test route
 app.get('/', (req, res) => {
   res.json({ message: 'CrashApp API is running!' });
