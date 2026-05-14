@@ -25,7 +25,7 @@ const authLimiter = rateLimit({
 const reportLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 10,
-  keyGenerator: (req) => req.user?.id || req.ip,
+  skip: (req) => !req.user,
   message: { error: 'You have filed too many reports. Please wait before posting again.' }
 });
 // Middleware
