@@ -2,12 +2,25 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const pool = require('./db');
+const rateLimit = require('express-rate-limit');
+const passport = require('./passport');
 
 dotenv.config();
 
 const app = express();
 
-const rateLimit = require('express-rate-limit');
+// Middleware
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:3000'
+  ],
+  credentials: true
+}));
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(passport.initialize());
 
 // Rate limiters
 const globalLimiter = rateLimit({
@@ -28,17 +41,6 @@ const reportLimiter = rateLimit({
   skip: (req) => !req.user,
   message: { error: 'You have filed too many reports. Please wait before posting again.' }
 });
-// Middleware
-app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'http://localhost:3000'
-  ],
-  credentials: true
-}));
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 // Routes
 const authRoutes = require('./routes/authRoutes');
@@ -52,6 +54,7 @@ app.use('/api/reports', upvoteRoutes);
 
 const userRoutes = require('./routes/userRoutes');
 app.use('/api/users', globalLimiter, userRoutes);
+
 // Test route
 app.get('/', (req, res) => {
   res.json({ message: 'CrashApp API is running!' });

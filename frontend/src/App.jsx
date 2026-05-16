@@ -11,6 +11,7 @@ import FileReport from './pages/FileReport'
 import EditReport from './pages/EditReport'
 import UserProfile from './pages/UserProfile'
 import SearchResults from './pages/SearchResults'
+import AuthCallback from './pages/AuthCallback'
 
 // Protected route component
 const ProtectedRoute = ({ children }) => {
@@ -28,6 +29,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/reports/:id" element={<SingleReport />} />
         <Route path="/search" element={<SearchResults />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/users/:id" element={<UserProfile />} />
         <Route
           path="/reports/new"

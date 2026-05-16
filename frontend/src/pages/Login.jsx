@@ -69,7 +69,36 @@ function Login() {
           {loading ? 'Logging in...' : 'Log In'}
         </button>
       </form>
-
+<div style={{ textAlign: 'center', margin: '24px 0' }}>
+        <p style={{ color: '#999', fontSize: '13px', marginBottom: '16px' }}>or continue with</p>
+        <a href="http://localhost:5000/api/auth/google">
+          <button
+            type="button"
+            style={{
+              width: '100%',
+              padding: '12px',
+              background: 'white',
+              border: '2px solid #ddd',
+              borderRadius: '10px',
+              fontSize: '15px',
+              fontWeight: '600',
+              color: '#333',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px'
+            }}
+          >
+            <img
+              src="https://www.google.com/favicon.ico"
+              alt="Google"
+              style={{ width: '20px', height: '20px' }}
+            />
+            Sign in with Google
+          </button>
+        </a>
+      </div>
+      
       <p style={{ textAlign: 'center', marginTop: '24px', color: '#666', fontSize: '14px' }}>
         Don't have an account?{' '}
         <Link to="/register" style={{ color: '#6c63ff', fontWeight: '700' }}>
