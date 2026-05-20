@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import api from '../api'
 import { useAuth } from '../context/AuthContext'
+import { useUI } from '../context/UIContext'
 
 function Login() {
   const [email, setEmail] = useState('')
@@ -9,6 +10,7 @@ function Login() {
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
   const { login } = useAuth()
+  const { toast } = useUI()
   const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
@@ -19,6 +21,7 @@ function Login() {
     try {
       const res = await api.post('/api/auth/login', { email, password })
       login(res.data.user, res.data.token)
+      toast(`Welcome back, ${res.data.user.name}!`, { tone: 'success' })
       navigate('/')
     } catch (err) {
       setError(err.response?.data?.error || 'Login failed')
@@ -71,7 +74,7 @@ function Login() {
       </form>
 <div style={{ textAlign: 'center', margin: '24px 0' }}>
         <p style={{ color: '#999', fontSize: '13px', marginBottom: '16px' }}>or continue with</p>
-        <a href="http://localhost:5000/api/auth/google">
+        <a href={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/google`}>
           <button
             type="button"
             style={{

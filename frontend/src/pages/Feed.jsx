@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import api from '../api'
 import { useAuth } from '../context/AuthContext'
+import { useUI } from '../context/UIContext'
+import { relativeTime } from '../utils/time'
 
 function Feed() {
   const [reports, setReports] = useState([])
@@ -11,6 +13,8 @@ function Feed() {
   const [tool, setTool] = useState('')
   const [status, setStatus] = useState('')
   const { isAuth } = useAuth()
+  const { toast } = useUI()
+  const navigate = useNavigate()
 
   const fetchReports = async () => {
     try {
@@ -19,7 +23,7 @@ function Feed() {
         params: { q: search, tool, status }
       })
       setReports(res.data)
-    } catch (err) {
+    } catch {
       setError('Failed to load reports')
     } finally {
       setLoading(false)
@@ -31,7 +35,11 @@ function Feed() {
   }, [search, tool, status])
 
   const handleUpvote = async (reportId, hasUpvoted) => {
-    if (!isAuth) return alert('Please login to upvote')
+    if (!isAuth) {
+      toast('Log in to upvote reports', { tone: 'warn' })
+      navigate('/login')
+      return
+    }
     try {
       if (hasUpvoted) {
         await api.delete(`/api/reports/${reportId}/upvote`)
@@ -40,7 +48,7 @@ function Feed() {
       }
       fetchReports()
     } catch (err) {
-      alert(err.response?.data?.error || 'Something went wrong')
+      toast(err.response?.data?.error || 'Something went wrong', { tone: 'error' })
     }
   }
 
@@ -54,10 +62,20 @@ function Feed() {
     }
   }
 
-  if (loading) return (
-    <div className="page-container">
-      <p>Loading reports...</p>
-    </div>
+  const renderSkeleton = () => (
+    <>
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="skeleton-card">
+          <div className="skeleton" style={{ height: 18, width: '60%', marginBottom: 12 }} />
+          <div className="skeleton" style={{ height: 13, width: '30%', marginBottom: 16 }} />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <div className="skeleton" style={{ height: 22, width: 70, borderRadius: 999 }} />
+            <div className="skeleton" style={{ height: 22, width: 80, borderRadius: 999 }} />
+          </div>
+          <div className="skeleton" style={{ height: 12, width: '40%', marginTop: 14 }} />
+        </div>
+      ))}
+    </>
   )
 
   if (error) return (
@@ -66,93 +84,103 @@ function Feed() {
     </div>
   )
 
+  const visibleReports = isAuth ? reports : reports.slice(0, 3)
+
   return (
     <div className="page-container">
-      <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '28px', fontWeight: '800', color: '#1a1a2e' }}>
-          Latest Outages & Bugs
-        </h1>
-        <p style={{ color: '#666', marginTop: '8px' }}>
-          Track and report issues with your favorite developer tools
-        </p>
+      <div className="feed-hero">
+        <h1>Latest Outages & Bugs</h1>
+        <p>Track and report issues with your favorite developer tools.</p>
       </div>
 
       <div className="search-bar">
         <input
           type="text"
-          placeholder="🔍 Search reports..."
+          placeholder="🔍  Search reports..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
         <input
           type="text"
-          placeholder="Filter by tool..."
+          placeholder="Filter by tool"
           value={tool}
           onChange={(e) => setTool(e.target.value)}
         />
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-        >
-          <option value="">All Status</option>
+        <select value={status} onChange={(e) => setStatus(e.target.value)}>
+          <option value="">All status</option>
           <option value="Ongoing">Ongoing</option>
           <option value="Resolved">Resolved</option>
         </select>
       </div>
 
-      {reports.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '40px' }}>
-          <p style={{ fontSize: '18px', color: '#666' }}>
-            No reports found. Be the first to report an issue!
+      {loading ? (
+        renderSkeleton()
+      ) : reports.length === 0 ? (
+        <div className="card" style={{ textAlign: 'center', padding: '48px 24px' }}>
+          <div style={{ fontSize: '40px', marginBottom: '8px' }}>🔍</div>
+          <p style={{ fontSize: '16px', color: 'var(--muted)', marginBottom: isAuth ? 16 : 0 }}>
+            No reports match your filters yet.
           </p>
           {isAuth && (
             <Link to="/reports/new">
-              <button className="btn-primary" style={{ marginTop: '16px' }}>
-                + File a Report
-              </button>
+              <button className="btn-primary">+ File the First Report</button>
             </Link>
           )}
         </div>
       ) : (
-        reports.map((report) => (
-          <div key={report.id} className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div style={{ flex: 1 }}>
-                <Link to={`/reports/${report.id}`}>
-                  <h3 style={{
-                    fontSize: '18px',
-                    fontWeight: '700',
-                    color: '#1a1a2e',
-                    marginBottom: '8px'
-                  }}>
-                    {report.title}
-                  </h3>
-                </Link>
-                <p style={{ color: '#666', marginBottom: '12px', fontSize: '14px' }}>
-                  <strong style={{ color: '#6c63ff' }}>{report.tool_name}</strong>
-                </p>
-                <div>
-                  <span className={severityClass(report.severity)}>
-                    {report.severity}
-                  </span>
-                  <span className={`badge ${report.status === 'Ongoing' ? 'badge-ongoing' : 'badge-resolved'}`}>
-                    {report.status}
-                  </span>
+        <>
+          {visibleReports.map((report) => (
+            <div key={report.id} className="card">
+              <div className="report-card">
+                <div className="report-card-body">
+                  <Link to={`/reports/${report.id}`}>
+                    <h3 className="report-title">{report.title}</h3>
+                  </Link>
+                  <div className="report-tool">{report.tool_name}</div>
+                  <div>
+                    <span className={severityClass(report.severity)}>{report.severity}</span>
+                    <span className={`badge ${report.status === 'Ongoing' ? 'badge-ongoing' : 'badge-resolved'}`}>
+                      {report.status}
+                    </span>
+                  </div>
+                  <p className="report-meta">
+                    By <Link to={`/users/${report.user_id}`} style={{ color: 'var(--brand)', fontWeight: 600 }}>
+                      {report.author_name}
+                    </Link> • <span title={new Date(report.created_at).toLocaleString()}>
+                      {relativeTime(report.created_at)}
+                    </span>
+                  </p>
                 </div>
-                <p style={{ color: '#999', fontSize: '13px', marginTop: '12px' }}>
-                  By {report.author_name} • {new Date(report.created_at).toLocaleDateString()}
-                </p>
+                <button
+                  className={`upvote-btn ${report.has_upvoted ? 'upvoted' : ''}`}
+                  onClick={() => handleUpvote(report.id, report.has_upvoted)}
+                >
+                  ▲ {report.upvote_count}
+                </button>
               </div>
-              <button
-                className={`upvote-btn ${report.has_upvoted ? 'upvoted' : ''}`}
-                onClick={() => handleUpvote(report.id, report.has_upvoted)}
-                style={{ marginLeft: '16px', minWidth: '70px' }}
-              >
-                ▲ {report.upvote_count}
-              </button>
             </div>
-          </div>
-        ))
+          ))}
+
+          {!isAuth && reports.length > 3 && (
+            <div className="card" style={{
+              textAlign: 'center',
+              padding: '40px 24px',
+              background: 'linear-gradient(135deg, #f8f9ff 0%, #eef0ff 100%)',
+              border: '2px dashed #c7c4ff'
+            }}>
+              <h3 style={{ fontSize: '19px', fontWeight: '800', color: 'var(--text)', marginBottom: '6px' }}>
+                {reports.length - 3} more reports waiting
+              </h3>
+              <p style={{ color: 'var(--muted)', marginBottom: '20px', fontSize: '14px' }}>
+                Sign up to see every outage, upvote issues you've hit, and file your own reports.
+              </p>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                <Link to="/register"><button className="btn-primary">Sign Up Free</button></Link>
+                <Link to="/login"><button className="btn-outline">Log In</button></Link>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   )

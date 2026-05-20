@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import api from '../api'
 import { useAuth } from '../context/AuthContext'
+import { useUI } from '../context/UIContext'
 
 function Register() {
   const [name, setName] = useState('')
@@ -10,6 +11,7 @@ function Register() {
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
   const { login } = useAuth()
+  const { toast } = useUI()
   const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
@@ -20,6 +22,7 @@ function Register() {
     try {
       const res = await api.post('/api/auth/register', { name, email, password })
       login(res.data.user, res.data.token)
+      toast('Welcome to CrashApp!', { tone: 'success' })
       navigate('/')
     } catch (err) {
       setError(err.response?.data?.error || 'Registration failed')

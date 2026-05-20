@@ -3,26 +3,29 @@ const pool = require('../db');
 // Get all reports ordered by upvotes
 const getReports = async (req, res) => {
   const { q, tool, status, sort } = req.query;
+  const viewerId = req.user?.id || null;
 
   try {
     const result = await pool.query(
-      `SELECT reports.*, 
+      `SELECT reports.*,
               COUNT(upvotes.id) AS upvote_count,
-              users.name AS author_name
+              users.name AS author_name,
+              users.avatar_url AS author_avatar_url,
+              BOOL_OR(upvotes.user_id = $4) AS has_upvoted
        FROM reports
        LEFT JOIN upvotes ON reports.id = upvotes.report_id
        JOIN users ON reports.user_id = users.id
        WHERE ($1::text IS NULL OR reports.tool_name ILIKE '%' || $1 || '%')
        AND ($2::text IS NULL OR reports.status = $2)
-       AND ($3::text IS NULL OR 
-            to_tsvector('english', 
-              reports.tool_name || ' ' || 
-              reports.title || ' ' || 
+       AND ($3::text IS NULL OR
+            to_tsvector('english',
+              reports.tool_name || ' ' ||
+              reports.title || ' ' ||
               reports.description
             ) @@ plainto_tsquery('english', $3))
-       GROUP BY reports.id, users.name
+       GROUP BY reports.id, users.name, users.avatar_url
        ORDER BY ${sort === 'recent' ? 'reports.created_at' : 'upvote_count'} DESC`,
-      [tool || null, status || null, q || null]
+      [tool || null, status || null, q || null, viewerId]
     );
 
     res.status(200).json(result.rows);
@@ -35,18 +38,21 @@ const getReports = async (req, res) => {
 // Get single report
 const getReport = async (req, res) => {
   const { id } = req.params;
+  const viewerId = req.user?.id || null;
 
   try {
     const result = await pool.query(
-      `SELECT reports.*, 
+      `SELECT reports.*,
               COUNT(upvotes.id) AS upvote_count,
-              users.name AS author_name
+              users.name AS author_name,
+              users.avatar_url AS author_avatar_url,
+              BOOL_OR(upvotes.user_id = $2) AS has_upvoted
        FROM reports
        LEFT JOIN upvotes ON reports.id = upvotes.report_id
        JOIN users ON reports.user_id = users.id
        WHERE reports.id = $1
-       GROUP BY reports.id, users.name`,
-      [id]
+       GROUP BY reports.id, users.name, users.avatar_url`,
+      [id, viewerId]
     );
 
     if (result.rows.length === 0) {
@@ -62,9 +68,6 @@ const getReport = async (req, res) => {
 
 // Create a report
 const createReport = async (req, res) => {
-  console.log('Body:', req.body);
-  console.log('File:', req.file);
-
   try {
     const { tool_name, title, description, severity, status } = req.body;
     const user_id = req.user.id;

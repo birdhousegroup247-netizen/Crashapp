@@ -8,11 +8,12 @@ const {
   deleteReport
 } = require('../controllers/reportController');
 const authMiddleware = require('../middleware/authMiddleware');
+const optionalAuth = require('../middleware/optionalAuth');
 
-// Public routes
-router.get('/', getReports);
-router.get('/search', getReports);
-router.get('/:id', getReport);
+// Public routes (optionalAuth so we can return has_upvoted when logged in)
+router.get('/', optionalAuth, getReports);
+router.get('/search', optionalAuth, getReports);
+router.get('/:id', optionalAuth, getReport);
 
 // Protected routes - removed upload middleware temporarily
 router.post('/', authMiddleware, createReport);

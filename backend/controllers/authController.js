@@ -56,6 +56,10 @@ const login = async (req, res) => {
       return res.status(400).json({ error: 'Invalid email or password' });
     }
 
+    if (!user.rows[0].password) {
+      return res.status(400).json({ error: 'This account uses Google sign-in. Please continue with Google.' });
+    }
+
     // Compare password
     const validPassword = await bcrypt.compare(password, user.rows[0].password);
 

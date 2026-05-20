@@ -27,11 +27,12 @@ router.get('/google/callback',
     );
 
     // Redirect to frontend with token
-    res.redirect(`https://crashapp-one.vercel.app/auth/callback?token=${token}&user=${JSON.stringify({
+    const frontendUrl = process.env.FRONTEND_URL || 'https://crashapp-one.vercel.app';
+    res.redirect(`${frontendUrl}/auth/callback?token=${token}&user=${encodeURIComponent(JSON.stringify({
       id: req.user.id,
       name: req.user.name,
       email: req.user.email
-    })}`);
+    }))}`);
   }
 );
 

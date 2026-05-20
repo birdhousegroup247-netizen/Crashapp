@@ -19,14 +19,20 @@ const ProtectedRoute = ({ children }) => {
   return isAuth ? children : <Navigate to="/login" />
 }
 
+// Redirect already-authenticated users away from auth pages
+const RedirectIfAuth = ({ children }) => {
+  const { isAuth } = useAuth()
+  return isAuth ? <Navigate to="/" replace /> : children
+}
+
 function App() {
   return (
     <>
       <Navbar />
       <Routes>
         <Route path="/" element={<Feed />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route path="/login" element={<RedirectIfAuth><Login /></RedirectIfAuth>} />
+        <Route path="/register" element={<RedirectIfAuth><Register /></RedirectIfAuth>} />
         <Route path="/reports/:id" element={<SingleReport />} />
         <Route path="/search" element={<SearchResults />} />
         <Route path="/auth/callback" element={<AuthCallback />} />

@@ -15,7 +15,7 @@ function SearchResults() {
         setLoading(true)
         const res = await api.get('/api/reports', { params: { q } })
         setReports(res.data)
-      } catch (err) {
+      } catch {
         setError('Failed to load search results')
       } finally {
         setLoading(false)
@@ -24,59 +24,60 @@ function SearchResults() {
     fetchResults()
   }, [q])
 
-  const severityColor = (severity) => {
+  const severityClass = (severity) => {
     switch (severity) {
-      case 'Low': return 'green'
-      case 'Medium': return 'orange'
-      case 'High': return 'darkorange'
-      case 'Critical': return 'red'
-      default: return 'gray'
+      case 'Low': return 'badge badge-low'
+      case 'Medium': return 'badge badge-medium'
+      case 'High': return 'badge badge-high'
+      case 'Critical': return 'badge badge-critical'
+      default: return 'badge'
     }
   }
 
-  if (loading) return <p>Searching...</p>
-  if (error) return <p>{error}</p>
+  if (loading) return <div className="loading">Searching...</div>
+  if (error) return (
+    <div className="page-container">
+      <p className="error-msg">{error}</p>
+    </div>
+  )
 
   return (
-    <div style={{ maxWidth: '800px', margin: '40px auto', padding: '20px' }}>
-      <Link to="/">← Back to Feed</Link>
+    <div className="page-container">
+      <Link to="/" style={{ color: '#6c63ff', fontWeight: '600', fontSize: '14px' }}>
+        ← Back to Feed
+      </Link>
 
-      <h2>Search Results for "{q}"</h2>
+      <h2 style={{ fontSize: '26px', fontWeight: '800', margin: '24px 0 8px', color: '#1a1a2e' }}>
+        Search results for "{q}"
+      </h2>
+      <p style={{ color: '#888', marginBottom: '24px' }}>
+        {reports.length} {reports.length === 1 ? 'match' : 'matches'} found
+      </p>
 
       {reports.length === 0 ? (
-        <p>No reports found for "{q}". Try different keywords.</p>
+        <div className="card" style={{ textAlign: 'center', padding: '40px' }}>
+          <p style={{ fontSize: '16px', color: '#666' }}>
+            No reports found for "{q}". Try different keywords.
+          </p>
+        </div>
       ) : (
         reports.map((report) => (
-          <div key={report.id} style={{
-            border: '1px solid #ddd',
-            borderRadius: '8px',
-            padding: '16px',
-            marginBottom: '16px'
-          }}>
-            <h3>
-              <Link to={`/reports/${report.id}`}>{report.title}</Link>
-            </h3>
-            <p><strong>Tool:</strong> {report.tool_name}</p>
-            <p>
-              <span style={{
-                background: severityColor(report.severity),
-                color: 'white',
-                padding: '2px 8px',
-                borderRadius: '4px',
-                marginRight: '8px'
-              }}>
-                {report.severity}
-              </span>
-              <span style={{
-                background: report.status === 'Ongoing' ? 'red' : 'green',
-                color: 'white',
-                padding: '2px 8px',
-                borderRadius: '4px'
-              }}>
+          <div key={report.id} className="card">
+            <Link to={`/reports/${report.id}`}>
+              <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#1a1a2e', marginBottom: '8px' }}>
+                {report.title}
+              </h3>
+            </Link>
+            <p style={{ color: '#6c63ff', fontWeight: '700', marginBottom: '12px', fontSize: '14px' }}>
+              {report.tool_name}
+            </p>
+            <div>
+              <span className={severityClass(report.severity)}>{report.severity}</span>
+              <span className={`badge ${report.status === 'Ongoing' ? 'badge-ongoing' : 'badge-resolved'}`}>
                 {report.status}
               </span>
-            </p>
-            <p style={{ color: 'gray', fontSize: '14px' }}>
+            </div>
+            <p style={{ color: '#999', fontSize: '13px', marginTop: '12px' }}>
               By {report.author_name} • {new Date(report.created_at).toLocaleDateString()} • ▲ {report.upvote_count}
             </p>
           </div>
